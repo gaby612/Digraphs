@@ -2656,6 +2656,130 @@ function(G)
   return [OutNbr, B];
 end);
 
+# has factorial(?) complexity but can maybe be improved slightly by ordering the combinations
+# and returning when you find a strong separating set rather than going through every combination
+InstallMethod(NaiveDigraphStrongVertexConnectivity, "for a digraph", [IsDigraph],
+function(D)
+  local S, vertices, combinations, svc, counter;
+  # if not IsStronglyConnected(D) then
+  #   return 0;
+  # fi;
+  vertices:= DigraphVertices(D);
+  combinations := Combinations(vertices);
+  # Print(combinations);
+  svc:= Length(vertices) - 1;  # since removing n-1 vertices gives trivial graph
+  # svc:= Length(vertices);
+  for S in combinations do
+    if not IsStronglyConnectedDigraph(DigraphRemoveVertices(D,S)) and svc > Length(S) then
+      svc := Length(S);
+    fi;
+  od;
+  return svc;
+end);
+
+InstallMethod(OptimisedNaiveDigraphStrongVertexConnectivity, "for a digraph", [IsDigraph],
+function(D)
+  local S, n, vertices, combinations, svc, counter;
+  # if not IsStronglyConnected(D) then
+  #   return 0;
+  # fi;
+  
+  vertices:= DigraphVertices(D);
+  n := DigraphNrVertices(D);
+  combinations := Combinations(vertices);
+  SortBy(combinations, Length); # ordered by number of vertices
+  for S in combinations do
+    if not IsStronglyConnectedDigraph(DigraphRemoveVertices(D,S)) then
+      return Length(S);
+    fi;
+  od;
+  return n - 1; # since removing n-1 vertices gives trivial graph
+end);
+
+
+
+# Specifically, we replace every vertex v with two vertices v_in and v_out, connected by
+# an edge v_in v_out with capacity c(v), 
+# and then replace every directed edge u v with the edge u_out v_in
+# (keeping the same capacity)
+InstallMethod(VertexSplitDigraph, "for a digraph", [IsDigraph],
+function(D)
+    local n, adj, weights, u, v, outs;
+
+    n := DigraphNrVertices(D);
+
+    # adjacency list for 2n vertices
+    adj := List([1..2*n], _ -> []);
+    weights := List([1..2*n], _ -> []);
+
+    outs := OutNeighbours(D);
+
+    # replace every vertex v with two vertices v_in and v_out
+    # connected by an edge v_in v_out with capacity 1
+    for u in [1..n] do
+      Add(adj[u], u+n);
+      Add(weights[u], 1);
+    od;
+
+    # replace every directed edge u v with the edge u_out v_in with capacity 1
+    for u in [1..n] do
+      for v in outs[u] do
+        Add(adj[u+n], v);
+        Add(weights[u+n], 1);
+      od;
+    od;
+
+    return EdgeWeightedDigraph(adj, weights);
+end);
+
+# Mengers theorem: the size of a minimum cut set is equal to the maximum number 
+# of disjoint paths that can be found between any pair of vertices
+
+# max flow: maximum amount of flow passing from the source to the sink is equal to 
+# the total weight of the edges in a minimum cut ie. the smallest total weight of the edges which 
+# if removed would disconnect the source from the sink
+InstallMethod(DigraphStrongVertexConnectivity, "for a digraph", [IsDigraph],
+function(D)
+  local n, min, maxFlow, u, v, G, pair, pairs;
+  n:= DigraphNrVertices(D);
+  min := n;
+
+  # if graph is trivial then its svc is 0
+  if n = 1 then # can maybe do if not strongly connected and same thing will happen
+    return 0;
+  fi;
+
+  if not IsStronglyConnectedDigraph(D) then
+    return 0;
+  fi;
+
+  G:= VertexSplitDigraph(D);
+  # Print(IsStronglyConnectedDigraph(G));
+  # idea: for every pair of distinct vertices find the maximum number of disjoint paths between them
+  # keep track of this and then the minimum number is the strong vertex connectivity
+
+  # the maximum value of an s-t flow is equal to the minimum capacity over all s-t cuts
+ 
+  pairs := Tuples([1..n],2); # ordered pairs
+  for pair in pairs do
+    # Print("pair",pair, "\n");
+    u:= pair[1];
+    v:= pair[2];
+
+    # we want distinct vertices so
+    if u = v then 
+      continue;
+    fi;
+    maxFlow := Sum(DigraphMaximumFlow(G, u+n, v)[u+n]);
+    # Print("Max flow",maxFlow, "\n");
+    if maxFlow < min then
+      min := maxFlow;
+    fi;
+  od;
+
+  return min;
+end);
+
 #############################################################################
 # 10. Operations for vertices
 #############################################################################

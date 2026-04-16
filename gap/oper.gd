@@ -156,6 +156,11 @@ DeclareOperation("Dominators", [IsDigraph, IsPosInt]);
 DeclareOperation("DominatorTree", [IsDigraph, IsPosInt]);
 DeclareOperation("DigraphCycleBasis", [IsDigraph]);
 
+DeclareOperation("NaiveDigraphStrongVertexConnectivity", [IsDigraph]);
+DeclareOperation("OptimisedNaiveDigraphStrongVertexConnectivity", [IsDigraph]);
+DeclareOperation("VertexSplitDigraph", [IsDigraph]);
+DeclareOperation("DigraphStrongVertexConnectivity", [IsDigraph]);
+
 # 10. Operations for vertices . . .
 DeclareOperation("PartialOrderDigraphJoinOfVertices",
                  [IsDigraph, IsPosInt, IsPosInt]);
