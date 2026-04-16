@@ -2656,19 +2656,22 @@ function(G)
   return [OutNbr, B];
 end);
 
-# has factorial(?) complexity but can maybe be improved slightly by ordering the combinations
-# and returning when you find a strong separating set rather than going through every combination
+# Brute force SVC algorithm for comparison with faster SVC algorithm. 
 InstallMethod(NaiveDigraphStrongVertexConnectivity, "for a digraph", [IsDigraph],
 function(D)
-  local S, vertices, combinations, svc, counter;
-  # if not IsStronglyConnected(D) then
-  #   return 0;
-  # fi;
+  local S, n, vertices, combinations, svc, counter;
+
+  # If not strongly connected then SVC is 0
+  if not IsStronglyConnected(D) then
+    return 0;
+  fi;
+
   vertices:= DigraphVertices(D);
+  n := DigraphNrVertices(D);
   combinations := Combinations(vertices);
-  # Print(combinations);
-  svc:= Length(vertices) - 1;  # since removing n-1 vertices gives trivial graph
-  # svc:= Length(vertices);
+
+  # Since removing n-1 vertices gives trivial graph, the max SVC is n-1
+  svc:= n - 1;
   for S in combinations do
     if not IsStronglyConnectedDigraph(DigraphRemoveVertices(D,S)) and svc > Length(S) then
       svc := Length(S);
@@ -2677,51 +2680,54 @@ function(D)
   return svc;
 end);
 
+# Optimise brute force SVC algorithm by ordering the combinations of vertices
+# and returning when it finds a strong separating set for the digraph D.
 InstallMethod(OptimisedNaiveDigraphStrongVertexConnectivity, "for a digraph", [IsDigraph],
 function(D)
   local S, n, vertices, combinations, svc, counter;
-  # if not IsStronglyConnected(D) then
-  #   return 0;
-  # fi;
+
+  # If not strongly connected then SVC is 0
+  if not IsStronglyConnected(D) then
+    return 0;
+  fi;
   
   vertices:= DigraphVertices(D);
   n := DigraphNrVertices(D);
   combinations := Combinations(vertices);
-  SortBy(combinations, Length); # ordered by number of vertices
+
+  # Sort combinations by number of vertices
+  SortBy(combinations, Length);
   for S in combinations do
     if not IsStronglyConnectedDigraph(DigraphRemoveVertices(D,S)) then
       return Length(S);
     fi;
   od;
-  return n - 1; # since removing n-1 vertices gives trivial graph
+
+  # Otherwise return n-1 since removing n-1 vertices gives trivial graph so this is the max SVC
+  return n - 1;
 end);
 
-
-
-# Specifically, we replace every vertex v with two vertices v_in and v_out, connected by
-# an edge v_in v_out with capacity c(v), 
-# and then replace every directed edge u v with the edge u_out v_in
-# (keeping the same capacity)
+# Construct a edge-weighted vertex-split digraph from a digraph D.
+# Each original vertex v is split into v_in and v_out, connected by an edge of weight 1.
+# Each original edge u v is replaced by u_out v_in with weight 1.
 InstallMethod(VertexSplitDigraph, "for a digraph", [IsDigraph],
 function(D)
     local n, adj, weights, u, v, outs;
 
     n := DigraphNrVertices(D);
+    outs := OutNeighbours(D);
 
-    # adjacency list for 2n vertices
+    # Adjacency list for 2n vertices
     adj := List([1..2*n], _ -> []);
     weights := List([1..2*n], _ -> []);
 
-    outs := OutNeighbours(D);
-
-    # replace every vertex v with two vertices v_in and v_out
-    # connected by an edge v_in v_out with capacity 1
+    # Replace every vertex v with two vertices v_in and v_out, connected by an edge v_in v_out with capacity 1
     for u in [1..n] do
       Add(adj[u], u+n);
       Add(weights[u], 1);
     od;
 
-    # replace every directed edge u v with the edge u_out v_in with capacity 1
+    # Replace every directed edge u v with the edge u_out v_in with capacity 1
     for u in [1..n] do
       for v in outs[u] do
         Add(adj[u+n], v);
@@ -2732,51 +2738,45 @@ function(D)
     return EdgeWeightedDigraph(adj, weights);
 end);
 
-# Mengers theorem: the size of a minimum cut set is equal to the maximum number 
-# of disjoint paths that can be found between any pair of vertices
-
-# max flow: maximum amount of flow passing from the source to the sink is equal to 
-# the total weight of the edges in a minimum cut ie. the smallest total weight of the edges which 
-# if removed would disconnect the source from the sink
+# SVC is given by constructing an edge-weighted vertex split digraph
+# and finding the minimum value for Maximum flow between a pair of vertices in the vertex split digraph
 InstallMethod(DigraphStrongVertexConnectivity, "for a digraph", [IsDigraph],
 function(D)
   local n, min, maxFlow, u, v, G, pair, pairs;
   n:= DigraphNrVertices(D);
   min := n;
 
-  # if graph is trivial then its svc is 0
-  if n = 1 then # can maybe do if not strongly connected and same thing will happen
+  # If graph is trivial then SVC is 0
+  if n = 1 then
     return 0;
   fi;
 
+  # If not strongly connected then SVC is 0
   if not IsStronglyConnectedDigraph(D) then
     return 0;
   fi;
 
   G:= VertexSplitDigraph(D);
-  # Print(IsStronglyConnectedDigraph(G));
-  # idea: for every pair of distinct vertices find the maximum number of disjoint paths between them
-  # keep track of this and then the minimum number is the strong vertex connectivity
 
-  # the maximum value of an s-t flow is equal to the minimum capacity over all s-t cuts
- 
-  pairs := Tuples([1..n],2); # ordered pairs
+  # Get ordered pairs of vertices
+  pairs := Tuples([1..n],2); 
   for pair in pairs do
-    # Print("pair",pair, "\n");
     u:= pair[1];
     v:= pair[2];
 
-    # we want distinct vertices so
+    # Only consider distinct vertices
     if u = v then 
       continue;
     fi;
+
+    # Compute maximum flow
     maxFlow := Sum(DigraphMaximumFlow(G, u+n, v)[u+n]);
-    # Print("Max flow",maxFlow, "\n");
     if maxFlow < min then
       min := maxFlow;
     fi;
   od;
 
+  # This minimum value is the SVC of the digraph D
   return min;
 end);
 
