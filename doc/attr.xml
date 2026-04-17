@@ -2867,3 +2867,34 @@ fail
   </Description>
 </ManSection>
 <#/GAPDoc>
+
+<#GAPDoc Label="DigraphStrongVertexConnectivity">
+<ManSection>
+  <Attr Name="DigraphStrongVertexConnectivity" Arg="digraph"/>
+  <Returns>A postive integer.</Returns>
+  <Description>
+    This function returns the strong vertex connectivity of the digraph <A>digraph</A>. <P/>
+
+    Strong vertex connectivity is defined as the size of the smallest strong separating set of <A>digraph</A>.
+    A strong separating set of a digraph <A>digraph</A> is a set of vertices <A>S</A> such that the digraph obtained from removing <A>S</A> from <A>digraph</A>
+    is not strongly connected or is the trivial digraph.
+
+    The strong vertex connectivity of the trivial digraph is 1. 
+  </Description>
+</ManSection>
+<#/GAPDoc>
+
+
+<#GAPDoc Label="DigraphVertexSplit">
+<ManSection>
+  <Oper Name="DigraphVertexSplit" Arg="digraph"/>
+  <Returns>An edge-weighted digraph.</Returns>
+  <Description>
+    This function returns the vertex-split digraph of the digraph <A>digraph</A>. <P/>
+    
+    A vertex-split digraph is the digraph constructed by splitting each vertex v into two vertices v-in and v-out connected with an edge.
+    Then for all original edges (u,v) add an edge (u-out, v-in). All edges have weight 1.
+    
+  </Description>
+</ManSection>
+<#/GAPDoc>

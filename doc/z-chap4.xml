@@ -20,6 +20,8 @@
     <#Include Label="IsMatching">
     <#Include Label="DigraphMaximalMatching">
     <#Include Label="DigraphMaximumMatching">
+    <#Include Label="DigraphStrongVertexConnectivity">
+    <#Include Label="DigraphVertexSplit">
   </Section>
 
   <Section><Heading>Neighbours and degree</Heading>
