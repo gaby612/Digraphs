@@ -3549,11 +3549,12 @@ function(D)
   combinations := Combinations(vertices);
 
   # Sort combinations by number of vertices
-  SortBy(combinations, Length);
-  for S in combinations do
-    if not IsStronglyConnectedDigraph(DigraphRemoveVertices(D,S)) then
-      return Length(S);
-    fi;
+  for k in [1..n-1] do
+    for S in IteratorOfCombinations(vertices, k) do
+      if not IsStronglyConnectedDigraph(DigraphRemoveVertices(D, S)) then
+        return k;
+      fi;
+    od;
   od;
 
   # Otherwise return n-1 since removing n-1 vertices gives trivial graph so this is the max SVC
@@ -3565,7 +3566,7 @@ end);
 # and finding the minimum value for Maximum flow between a pair of vertices in the vertex split digraph
 InstallMethod(DigraphStrongVertexConnectivity, "for a digraph", [IsDigraph],
 function(D)
-  local n, min, maxFlow, u, v, G, pair, pairs;
+  local n, min, maxFlow, u, v, G, iter, pair;
   n:= DigraphNrVertices(D);
   min := n;
 
@@ -3580,10 +3581,9 @@ function(D)
   fi;
 
   G:= DigraphVertexSplit(D);
-
   # Get ordered pairs of vertices
-  pairs := Tuples([1..n],2); 
-  for pair in pairs do
+  iter := IteratorOfTuples([1..n],2); 
+  for pair in iter do
     u:= pair[1];
     v:= pair[2];
 
