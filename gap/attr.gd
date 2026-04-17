@@ -79,6 +79,10 @@ DeclareAttribute("CharacteristicPolynomial", IsDigraph);
 DeclareAttribute("NrSpanningTrees", IsDigraph);
 DeclareAttribute("DigraphVertexConnectivity", IsDigraph);
 
+DeclareOperation("NaiveDigraphStrongVertexConnectivity", [IsDigraph]);
+DeclareOperation("OptimisedNaiveDigraphStrongVertexConnectivity", [IsDigraph]);
+DeclareOperation("DigraphStrongVertexConnectivity", [IsDigraph]);
+
 # AsGraph must be mutable for grape to function properly
 DeclareAttribute("AsGraph", IsDigraph, "mutable");
 DeclareAttribute("AsTransformation", IsDigraph);

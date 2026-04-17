@@ -3509,6 +3509,101 @@ function(D)
   return kappa_min;
 end);
 
+# Brute force SVC algorithm for comparison with faster SVC algorithm. 
+InstallMethod(NaiveDigraphStrongVertexConnectivity, "for a digraph", [IsDigraph],
+function(D)
+  local S, n, vertices, combinations, svc, counter;
+
+  # If not strongly connected then SVC is 0
+  if not IsStronglyConnected(D) then
+    return 0;
+  fi;
+
+  vertices:= DigraphVertices(D);
+  n := DigraphNrVertices(D);
+  combinations := Combinations(vertices);
+
+  # Since removing n-1 vertices gives trivial graph, the max SVC is n-1
+  svc:= n - 1;
+  for S in combinations do
+    if not IsStronglyConnectedDigraph(DigraphRemoveVertices(D,S)) and svc > Length(S) then
+      svc := Length(S);
+    fi;
+  od;
+  return svc;
+end);
+
+# Optimise brute force SVC algorithm by ordering the combinations of vertices
+# and returning when it finds a strong separating set for the digraph D.
+InstallMethod(OptimisedNaiveDigraphStrongVertexConnectivity, "for a digraph", [IsDigraph],
+function(D)
+  local S, n, vertices, combinations, svc, counter;
+
+  # If not strongly connected then SVC is 0
+  if not IsStronglyConnected(D) then
+    return 0;
+  fi;
+  
+  vertices:= DigraphVertices(D);
+  n := DigraphNrVertices(D);
+  combinations := Combinations(vertices);
+
+  # Sort combinations by number of vertices
+  SortBy(combinations, Length);
+  for S in combinations do
+    if not IsStronglyConnectedDigraph(DigraphRemoveVertices(D,S)) then
+      return Length(S);
+    fi;
+  od;
+
+  # Otherwise return n-1 since removing n-1 vertices gives trivial graph so this is the max SVC
+  return n - 1;
+end);
+
+
+# SVC is given by constructing an edge-weighted vertex split digraph
+# and finding the minimum value for Maximum flow between a pair of vertices in the vertex split digraph
+InstallMethod(DigraphStrongVertexConnectivity, "for a digraph", [IsDigraph],
+function(D)
+  local n, min, maxFlow, u, v, G, pair, pairs;
+  n:= DigraphNrVertices(D);
+  min := n;
+
+  # If graph is trivial then SVC is 0
+  if n = 1 then
+    return 0;
+  fi;
+
+  # If not strongly connected then SVC is 0
+  if not IsStronglyConnectedDigraph(D) then
+    return 0;
+  fi;
+
+  G:= DigraphVertexSplit(D);
+
+  # Get ordered pairs of vertices
+  pairs := Tuples([1..n],2); 
+  for pair in pairs do
+    u:= pair[1];
+    v:= pair[2];
+
+    # Only consider distinct vertices
+    if u = v then 
+      continue;
+    fi;
+
+    # Compute maximum flow
+    maxFlow := Sum(DigraphMaximumFlow(G, u+n, v)[u+n]);
+    if maxFlow < min then
+      min := maxFlow;
+    fi;
+  od;
+
+  # This minimum value is the SVC of the digraph D
+  return min;
+end);
+
+
 # The following function is a transliteration from python to GAP of
 # the function find_nonsemimodular_pair
 # in sage/src/sage/combinat/posets/hasse_diagram.py
